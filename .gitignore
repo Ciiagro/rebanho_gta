@@ -22,3 +22,6 @@ venv/
 
 # Cache da ferramenta de consulta (contém dados pessoais)
 .cache_consulta/
+
+!docs/painel_gta_ceara.html
+!docs/painel_rebanho_ceara.html
