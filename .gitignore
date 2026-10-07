@@ -1,0 +1,24 @@
+# Segredos: NUNCA subir
+.env
+.env.*
+!.env.example
+
+# Dados com CPF/CNPJ e nomes de pessoas (LGPD)
+*.xlsx
+*.xls
+*.csv
+*.pkl
+
+# Painel gerado (contém dados guia a guia). Remova esta linha só se a ADAGRI autorizar.
+painel_gta_ceara.html
+painel_rebanho_ceara.html
+
+# Python / editor
+__pycache__/
+*.pyc
+.venv/
+venv/
+.vscode/
+
+# Cache da ferramenta de consulta (contém dados pessoais)
+.cache_consulta/
