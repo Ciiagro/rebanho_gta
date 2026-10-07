@@ -42,6 +42,7 @@ button,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
 
 .wrap{max-width:1360px;margin:0 auto;padding:0 20px 40px}
+#rank,#espList{max-height:640px;overflow:auto;padding-right:4px}
 header.top{padding:28px 0 18px}
 header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
 header.top .htxt{min-width:0;flex:1 1 420px}
@@ -251,7 +252,7 @@ details.meth p{max-width:90ch;margin:8px 0}
             <p class="hint">Passe o mouse para ver o município. Clique para filtrar todo o painel.</p>
           </div>
           <div>
-            <h3 style="font-size:15px;margin-bottom:8px">Maiores municípios</h3>
+            <h3 style="font-size:15px;margin-bottom:8px">Todos os municípios</h3>
             <div class="blist" id="rank"></div>
           </div>
         </div>
@@ -370,7 +371,7 @@ function renderMap(){
   $('legend').innerHTML=br.length?lg:'';
   $('mapTitle').textContent='Onde está o rebanho: '+label().toLowerCase();
   $('mapSub').textContent='Em '+unit()+', por município'+(S.faixa>=0?' (só propriedades com '+DATA.faixas[S.faixa]+' animais).':'.');
-  barList($('rank'),top(vals,12,nm,function(i){return i===S.mun;}),{rank:true,pick:function(k){pickMun(+k);}});
+  barList($('rank'),top(vals,0,nm,function(i){return i===S.mun;}),{rank:true,pick:function(k){pickMun(+k);}});
 }
 function pickMun(i){S.mun=(S.mun===i?-1:i);update();}
 function showTip(e){var p=e.target.closest&&e.target.closest('.mu');if(!p){tip.classList.remove('on');return;}
@@ -396,7 +397,7 @@ function renderKpis(){
 
 /* ---- demais painéis ---- */
 function renderPanels(){
-  barList($('espList'),top(S.metric==='q'?A.spQ:A.spN,12,function(i){return DATA.esp[i].n;},function(i){return i===S.esp;}),
+  barList($('espList'),top(S.metric==='q'?A.spQ:A.spN,0,function(i){return DATA.esp[i].n;},function(i){return i===S.esp;}),
     {pick:function(k){k=+k;S.esp=(S.esp===k?-1:k);update();}});
   // faixas
   var tn=0,tq=0,f;for(f=0;f<NF;f++){tn+=A.fN[f];tq+=A.fQ[f];}

@@ -151,6 +151,8 @@ table.dt tr.hl td{background:color-mix(in srgb,var(--ochre) 16%,transparent)}
 table.dt tr:hover td{background:var(--soft)}
 table.dt tfoot td{position:sticky;bottom:0;background:var(--surface);font-weight:700;border-top:1px solid var(--line)}
 #map .mu.hl{stroke:var(--ochre);stroke-width:2.4}
+#rank{max-height:640px;overflow:auto;padding-right:4px}
+#espList,#finList,#ufList,#tipoList,#gUp,#gDown{max-height:360px;overflow:auto;padding-right:4px}
 .msel{margin-bottom:12px}.msel input{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 11px;font:inherit}.msel input:focus{border-color:var(--brand)}
 .dnote{font-size:12.5px;color:var(--muted);margin:6px 0 0}
 
@@ -520,7 +522,8 @@ function renderMap(){
   if(DET){$('rankTitle').style.display='none';$('rank').style.display='none';$('detail').style.display='block';renderDetail();}
   else{$('detail').style.display='none';$('rankTitle').style.display='';$('rank').style.display='';
     $('rankTitle').textContent=origin?'Maiores municípios de origem':'Maiores municípios de destino';
-    var items=top(vals,12,function(i){return DATA.munis[i].n;},function(i){return i===selIdx;});
+    var items=top(vals,0,function(i){return DATA.munis[i].n;},function(i){return i===selIdx;});
+    $('rankTitle').textContent=(origin?'Municípios de origem':'Municípios de destino')+' ('+items.length+')';
     barList($('rank'),items,{rank:true,pick:function(k){pickMuni(+k);}});}
 }
 
@@ -856,16 +859,16 @@ function renderInsights(){
 /* ---------- demais painéis ---------- */
 function renderLists(){
   barList($('dow'),top(A.dowV,0,function(i){return DOW[i];},null,null).sort(function(a,b){return a.k-b.k;}),{noclick:true});
-  barList($('espList'),top(A.espV,10,function(i){return DATA.esp[i].n;},function(i){return i===S.esp;}),
+  barList($('espList'),top(A.espV,0,function(i){return DATA.esp[i].n;},function(i){return i===S.esp;}),
     {pick:function(k){k=+k;if(S.esp===k)S.esp=-1;else{S.esp=k;S.grupo=espG[k];}update();}});
-  barList($('finList'),top(A.finV,10,function(i){return DATA.fin[i];},function(i){return i===S.fin;}),
+  barList($('finList'),top(A.finV,0,function(i){return DATA.fin[i];},function(i){return i===S.fin;}),
     {pick:function(k){k=+k;S.fin=(S.fin===k?-1:k);update();}});
   var ufArr=Array.prototype.slice.call(A.ufV);ufArr[0]=0;
   var ufTot=0,ufAll=0;for(var u=0;u<NU;u++){ufAll+=A.ufV[u];if(u>0)ufTot+=A.ufV[u];}
   $('ufSub').textContent='Dentro do Ceará: '+(ufAll?fP(A.ufV[0]/ufAll*100):'0%')+'. Estados de destino, fora o Ceará:';
-  barList($('ufList'),top(ufArr,8,function(i){return UFNAME[DATA.uf[i]]||DATA.uf[i];},function(i){return S.dest==='uf:'+DATA.uf[i];}),
+  barList($('ufList'),top(ufArr,0,function(i){return UFNAME[DATA.uf[i]]||DATA.uf[i];},function(i){return S.dest==='uf:'+DATA.uf[i];}),
     {noshare:false,pick:function(k){var d='uf:'+DATA.uf[+k];S.dest=(S.dest===d?'all':d);update();}});
-  barList($('tipoList'),top(A.tipoV,5,function(i){return DATA.tipo[i];},function(i){return i===S.tipo;}),
+  barList($('tipoList'),top(A.tipoV,0,function(i){return DATA.tipo[i];},function(i){return i===S.tipo;}),
     {pick:function(k){k=+k;S.tipo=(S.tipo===k?-1:k);update();}});
   // grupos
   var rows='<tr><th>Grupo</th><th>Guias</th><th>Quantidade</th></tr>';
@@ -881,7 +884,7 @@ function renderLists(){
   var span=fmtDay(A.start)+' a '+fmtDay(Math.ceil(A.mid)-1)+' contra '+fmtDay(Math.ceil(A.mid))+' a '+fmtDay(A.end);
   $('growSub').textContent='Compara '+span+'. Só entram municípios com volume mínimo no período.';
   function glist(arr,cls){
-    return arr.length?arr.slice(0,6).map(function(x){
+    return arr.length?arr.map(function(x){
       return '<div class="it"><span>'+esc(DATA.munis[x.i].n)+'</span><span class="'+cls+'">'+(isFinite(x.pct)?fS(x.pct):'novo')+'</span><small>'+metricVal(x.a)+' → '+metricVal(x.b)+' '+unitWord()+'</small></div>';
     }).join(''):'<p class="empty">Nenhum município nesta situação.</p>';
   }
@@ -972,7 +975,7 @@ function update(){
   inp.addEventListener('keydown',function(e){if(e.key==='Enter')go();});
 })();
 /* ---------- início ---------- */
-$('subtitle').textContent='Guias emitidas de '+fmtFull(0)+' a '+fmtFull(maxDay)+' ('+fN(N)+' guias).'+(DATA.upd?' Base atualizada em '+DATA.upd+'.':'')+' Escolha filtros acima ou clique no mapa e nos gráficos para explorar. (painel v5)';
+$('subtitle').textContent='Guias emitidas de '+fmtFull(0)+' a '+fmtFull(maxDay)+' ('+fN(N)+' guias).'+(DATA.upd?' Base atualizada em '+DATA.upd+'.':'')+' Escolha filtros acima ou clique no mapa e nos gráficos para explorar. (painel v7)';
 $('mN').textContent=fN(N);
 update();
 // redesenha o gráfico quando o tema claro/escuro mudar
