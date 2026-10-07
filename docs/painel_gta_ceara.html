@@ -151,6 +151,7 @@ table.dt tr.hl td{background:color-mix(in srgb,var(--ochre) 16%,transparent)}
 table.dt tr:hover td{background:var(--soft)}
 table.dt tfoot td{position:sticky;bottom:0;background:var(--surface);font-weight:700;border-top:1px solid var(--line)}
 #map .mu.hl{stroke:var(--ochre);stroke-width:2.4}
+.msel{margin-bottom:12px}.msel input{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 11px;font:inherit}.msel input:focus{border-color:var(--brand)}
 .dnote{font-size:12.5px;color:var(--muted);margin:6px 0 0}
 
 
@@ -272,6 +273,7 @@ details.meth p{max-width:90ch;margin:8px 0}
       </section>
 
       <section class="panel s6" aria-label="Lista de municípios">
+        <div class="msel"><input id="fMuni" list="muniList" placeholder="Buscar município pelo nome e selecionar…" autocomplete="off" aria-label="Buscar município"><datalist id="muniList"></datalist></div>
         <h3 style="font-size:15px;margin-bottom:8px" id="rankTitle">Maiores municípios de origem</h3>
         <div class="blist" id="rank"></div>
         <div id="detail" style="display:none"></div>
@@ -954,6 +956,21 @@ function update(){
   renderKpis();renderInsights();renderMap();renderTime();renderLists();chips();
 }
 
+
+/* ---------- busca de município pelo nome ---------- */
+(function(){
+  var inp=$('fMuni'),dl=$('muniList');
+  function norm(t){return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+  var idx={};
+  dl.innerHTML=DATA.munis.map(function(m,i){idx[norm(m.n)]=i;return '<option value="'+esc(m.n)+'"></option>';}).join('');
+  function go(){
+    var i=idx[norm(inp.value)];if(i===undefined)return;
+    if(S.mapMode==='o')S.mo=i;else S.md=i;
+    inp.value='';inp.blur();update();
+  }
+  inp.addEventListener('input',go);inp.addEventListener('change',go);
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')go();});
+})();
 /* ---------- início ---------- */
 $('subtitle').textContent='Guias emitidas de '+fmtFull(0)+' a '+fmtFull(maxDay)+' ('+fN(N)+' guias).'+(DATA.upd?' Base atualizada em '+DATA.upd+'.':'')+' Escolha filtros acima ou clique no mapa e nos gráficos para explorar. (painel v5)';
 $('mN').textContent=fN(N);
