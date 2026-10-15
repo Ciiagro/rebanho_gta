@@ -271,7 +271,7 @@ details.meth p{max-width:90ch;margin:8px 0}
           <div class="tip" id="tip"></div>
         </div>
         <div class="legend" id="legend"></div>
-        <p class="hint">Passe o mouse para ver o município. Clique para filtrar todo o painel. Ao escolher uma origem, as setas mostram para onde vão as guias.</p>
+        <p class="hint" id="mapHint">Passe o mouse para ver o município. Clique para filtrar todo o painel. Ao escolher uma origem, as setas mostram para onde vão as guias.</p>
       </section>
 
       <section class="panel s6" aria-label="Lista de municípios">
@@ -382,6 +382,7 @@ var espG=DATA.esp.map(function(e){return e.g;});
 var NE=DATA.esp.length,NF=DATA.fin.length,NT=DATA.tipo.length,NU=DATA.uf.length,NG=DATA.grupos.length,NO=DATA.munis.length,DN=DATA.dest.length;
 var UNIT=['cabeças','cabeças','cabeças','cabeças','cabeças','cabeças','aves','indivíduos','colmeias','animais'];
 var MAMMAL=[0,1,2,3,4,5];
+var isMam=new Uint8Array(NG);MAMMAL.forEach(function(g){isMam[g]=1;});
 var UFNAME={AC:'Acre',AL:'Alagoas',AM:'Amazonas',AP:'Amapá',BA:'Bahia',CE:'Ceará',DF:'Distrito Federal',ES:'Espírito Santo',GO:'Goiás',MA:'Maranhão',MG:'Minas Gerais',MS:'Mato Grosso do Sul',MT:'Mato Grosso',PA:'Pará',PB:'Paraíba',PE:'Pernambuco',PI:'Piauí',PR:'Paraná',RJ:'Rio de Janeiro',RN:'Rio Grande do Norte',RO:'Rondônia',RR:'Roraima',RS:'Rio Grande do Sul',SC:'Santa Catarina',SE:'Sergipe',SP:'São Paulo',TO:'Tocantins'};
 
 /* ---------- formatação ---------- */
@@ -405,7 +406,7 @@ var A=null;
 /* ---------- cálculo ---------- */
 var flow=new Float64Array(NO*DN);
 function compute(){
-  var useQ=S.metric==='q',hasM=S.months.size>0,monthOK=new Uint8Array(12);
+  var useQ=S.metric==='q',mamOnly=useQ&&S.grupo<0&&S.esp<0,hasM=S.months.size>0,monthOK=new Uint8Array(12);
   S.months.forEach(function(m){monthOK[m]=1;});
   var destOK=new Uint8Array(NU);
   for(var u=0;u<NU;u++){
@@ -431,7 +432,7 @@ function compute(){
     if(S.mo>=0&&o!==S.mo)f|=64;
     if(S.md>=0&&m!==S.md)f|=128;
     fail[i]=f;
-    var v=useQ?Q[i]:1;
+    var v=useQ?((mamOnly&&!isMam[espG[e]])?0:Q[i]):1;
     if((f&~1)===0)R.dayV[d]+=v;
     if((f&~4)===0)R.espV[e]+=v;
     if((f&~6)===0){R.grpC[espG[e]]++;R.grpQ[espG[e]]+=Q[i];}
@@ -454,8 +455,10 @@ function compute(){
 function unitWord(){
   if(S.metric==='g')return 'guias';
   var g=S.grupo>=0?S.grupo:(S.esp>=0?espG[S.esp]:-1);
-  return g>=0?UNIT[g]:'animais';
+  return g>=0?UNIT[g]:'cabeças';
 }
+function what(){return S.metric==='g'?'as guias':'os animais';}
+function mamOnlyNow(){return S.metric==='q'&&S.grupo<0&&S.esp<0;}
 function metricVal(n){return S.metric==='q'?fC(n):fN(n);}
 
 /* ---------- componentes: listas de barras ---------- */
@@ -514,11 +517,14 @@ function renderMap(){
     lg+='<span><i style="background:var(--s'+(k+1)+')"></i>'+(hi===null?'mais de '+metricVal(br[br.length-1]):(k===0?'até ':'até ')+metricVal(hi))+'</span>';
   }
   $('legend').innerHTML=br.length?lg:'';
-  $('mapTitle').textContent=detO?('Para onde vão as guias de '+DATA.munis[S.mo].n):detD?('De onde vêm as guias de '+DATA.munis[S.md].n):(origin?'De onde saem as guias':'Onde as guias chegam no Ceará');
+  $('mapTitle').textContent=detO?('Para onde vão '+what()+' de '+DATA.munis[S.mo].n):detD?('De onde vêm '+what()+' de '+DATA.munis[S.md].n):(origin?'De onde saem '+what():'Onde '+what()+' chegam no Ceará');
   var outShare='';
   if(!origin){var tot=0,out=0;for(var u=0;u<NU;u++){tot+=A.ufV[u];if(u>0)out+=A.ufV[u];}
     outShare=tot>0?' '+fP(out/tot*100)+' do volume vai para outros estados e não aparece no mapa.':'';}
   $('mapSub').textContent=detO?('Cada município está pintado pelo volume em '+unitWord()+' que recebe de '+DATA.munis[S.mo].n+'. A lista completa está ao lado.'):detD?('Cada município está pintado pelo volume em '+unitWord()+' que envia para '+DATA.munis[S.md].n+'. A lista completa está ao lado.'):('Volume em '+unitWord()+', por município'+(origin?' de origem.':' de destino.')+outShare);
+  if(mamOnlyNow())$('mapSub').textContent+=' Sem grupo escolhido, contam só os mamíferos (bovinos, bubalinos, ovinos, caprinos, suínos e equídeos). Escolha um grupo ou espécie para somar os demais.';
+  $('mapHint').textContent='Passe o mouse para ver o município. Clique para filtrar todo o painel. Ao escolher uma origem, as setas mostram para onde vão '+what()+'.';
+  mapEl.setAttribute('aria-label','Mapa dos municípios do Ceará colorido pelo volume de '+(S.metric==='g'?'guias':unitWord()));
   if(DET){$('rankTitle').style.display='none';$('rank').style.display='none';$('detail').style.display='block';renderDetail();}
   else{$('detail').style.display='none';$('rankTitle').style.display='';$('rank').style.display='';
     $('rankTitle').textContent=origin?'Maiores municípios de origem':'Maiores municípios de destino';
@@ -553,7 +559,7 @@ function renderDetail(){
   }
   detRows=rows;
   var h='';
-  h+='<div class="dhead"><h3>'+(isO?'Para onde vão as guias de ':'De onde vêm as guias de ')+esc(nome)+'</h3><button type="button" class="dclear" id="dClear">× Limpar seleção</button></div>';
+  h+='<div class="dhead"><h3>'+(isO?'Para onde vão '+what()+' de ':'De onde vêm '+what()+' de ')+esc(nome)+'</h3><button type="button" class="dclear" id="dClear">× Limpar seleção</button></div>';
   if(isO){
     h+='<div class="dsum">'+
       '<div><b>'+metricVal(self)+'</b><span>ficam no próprio município</span><small>'+pc(self)+'</small></div>'+
@@ -919,7 +925,7 @@ fFin.onchange=function(){S.fin=+fFin.value;update();};
 fTipo.onchange=function(){S.tipo=+fTipo.value;update();};
 fDest.onchange=function(){S.dest=fDest.value;update();};
 $('mG').onclick=function(){S.metric='g';update();};
-$('mQ').onclick=function(){if(S.grupo>=0||S.esp>=0){S.metric='q';update();}};
+$('mQ').onclick=function(){S.metric='q';update();};
 $('mapO').onclick=function(){S.mapMode='o';update();};
 $('mapD').onclick=function(){S.mapMode='d';update();};
 document.querySelectorAll('[data-g]').forEach(function(b){if(b.tagName==='BUTTON'&&b.parentNode.getAttribute('aria-label')==='Agrupar por')b.onclick=function(){S.gran=b.getAttribute('data-g');update();};});
@@ -945,11 +951,10 @@ function chips(){
   };
 }
 function sync(){
-  if(S.metric==='q'&&S.grupo<0&&S.esp<0)S.metric='g';
   fillEsp();
   fGrupo.value=S.grupo;fEsp.value=S.esp;fFin.value=S.fin;fTipo.value=S.tipo;fDest.value=S.dest;
   $('mG').setAttribute('aria-pressed',S.metric==='g');$('mQ').setAttribute('aria-pressed',S.metric==='q');
-  $('mQ').disabled=(S.grupo<0&&S.esp<0);$('mQ').title=$('mQ').disabled?'Escolha um grupo ou espécie para somar animais':'';
+  $('mQ').title=(S.grupo<0&&S.esp<0)?'Soma as cabeças de mamíferos. Escolha um grupo ou espécie para somar outros animais.':'';
   $('mapO').setAttribute('aria-pressed',S.mapMode==='o');$('mapD').setAttribute('aria-pressed',S.mapMode==='d');
   monthsEl.querySelectorAll('.chip').forEach(function(b){b.setAttribute('aria-pressed',S.months.has(+b.getAttribute('data-m')));});
   document.querySelectorAll('.seg[aria-label="Agrupar por"] button').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-g')===S.gran);});
@@ -975,7 +980,7 @@ function update(){
   inp.addEventListener('keydown',function(e){if(e.key==='Enter')go();});
 })();
 /* ---------- início ---------- */
-$('subtitle').textContent='Guias emitidas de '+fmtFull(0)+' a '+fmtFull(maxDay)+' ('+fN(N)+' guias).'+(DATA.upd?' Base atualizada em '+DATA.upd+'.':'')+' Escolha filtros acima ou clique no mapa e nos gráficos para explorar. (painel v7)';
+$('subtitle').textContent='Guias emitidas de '+fmtFull(0)+' a '+fmtFull(maxDay)+' ('+fN(N)+' guias).'+(DATA.upd?' Base atualizada em '+DATA.upd+'.':'')+' Escolha filtros acima ou clique no mapa e nos gráficos para explorar. (painel v8)';
 $('mN').textContent=fN(N);
 update();
 // redesenha o gráfico quando o tema claro/escuro mudar
